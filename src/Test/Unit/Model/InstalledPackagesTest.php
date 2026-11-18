@@ -39,7 +39,8 @@ class InstalledPackagesTest extends TestCase
     private array $installedVersionsState = [];
 
     /**
-     * Remembers the state of Composer's InstalledVersions, which a test replaces with fake data.
+     * Remembers the state of Composer's InstalledVersions, which a test replaces with fake data, and creates the
+     * logger.
      *
      * @return void
      */
@@ -50,6 +51,8 @@ class InstalledPackagesTest extends TestCase
                 $this->installedVersionsState[ $property->getName() ] = $property->getValue();
             }
         }
+
+        $this->logging = $this->createMock(LoggerInterface::class);
     }
 
     /**
@@ -160,8 +163,6 @@ class InstalledPackagesTest extends TestCase
         $file->method('fileGetContents')->willReturnCallback(
             fn(string $path): string => $this->files[ $path ]
         );
-
-        $this->logging = $this->createMock(LoggerInterface::class);
 
         $installedPackages = $this->getMockBuilder(InstalledPackages::class)
             ->setConstructorArgs([$fullModuleList, $moduleReader, $file, new Json(), $this->logging])
