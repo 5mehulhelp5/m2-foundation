@@ -36,32 +36,38 @@ class PackagistTest extends TestCase
         /** @var CurlFactory&Stub $curlFactory */
         $curlFactory = $this->createStub(CurlFactory::class);
 
-        $curlFactory->method('create')->willReturnCallback(
-            function (): Curl {
-                $url = '';
+        $curlFactory->method('create')->willReturnCallback(fn(): Curl => $this->createCurl());
 
-                $curl = $this->createStub(Curl::class);
-                $curl->method('get')->willReturnCallback(
-                    function (string $requestedUrl) use (&$url): void {
-                        $url = $requestedUrl;
-                    }
-                );
-                $curl->method('getStatus')->willReturnCallback(
-                    function () use (&$url): int {
-                        return $this->responses[ $url ][ 0 ] ?? 404;
-                    }
-                );
-                $curl->method('getBody')->willReturnCallback(
-                    function () use (&$url): string {
-                        return $this->responses[ $url ][ 1 ] ?? '';
-                    }
-                );
+        return new Packagist($curlFactory, new Json());
+    }
 
-                return $curl;
+    /**
+     * Returns an HTTP client that answers its request from $this->responses.
+     *
+     * @return Curl
+     */
+    private function createCurl(): Curl
+    {
+        $url = '';
+
+        $curl = $this->createStub(Curl::class);
+        $curl->method('get')->willReturnCallback(
+            function (string $requestedUrl) use (&$url): void {
+                $url = $requestedUrl;
+            }
+        );
+        $curl->method('getStatus')->willReturnCallback(
+            function () use (&$url): int {
+                return $this->responses[ $url ][ 0 ] ?? 404;
+            }
+        );
+        $curl->method('getBody')->willReturnCallback(
+            function () use (&$url): string {
+                return $this->responses[ $url ][ 1 ] ?? '';
             }
         );
 
-        return new Packagist($curlFactory, new Json());
+        return $curl;
     }
 
     /**
@@ -170,7 +176,8 @@ class PackagistTest extends TestCase
 
         $this->assertSame(
             ['infrangible/m2-task', 'infrangible/m2-log'],
-            $this->createPackagist()->getUpdatedPackageNames((int)strtotime('2026-01-01T00:00:00+00:00'))
+            // 2026-01-01 00:00:00 UTC
+            $this->createPackagist()->getUpdatedPackageNames(1767225600)
         );
     }
 
